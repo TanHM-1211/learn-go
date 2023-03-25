@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -57,7 +56,7 @@ func createID(currentTime int64, machineIDsequenceShifted int64, sequence int64)
 		return 0, ErrSequenceExceeded
 	} else {
 		id := ID((currentTime << BitShiftTime) | machineIDsequenceShifted | sequence)
-		fmt.Println(id, currentTime, machineIDsequenceShifted, sequence)
+		// fmt.Println(id, currentTime, machineIDsequenceShifted, sequence)
 		return id, nil
 	}
 }
@@ -80,37 +79,4 @@ func (g *Generator) generate() (ID, error) {
 	} else {
 		return id, nil
 	}
-}
-
-func (id ID) getInfo() {
-	timeStamp := id >> BitShiftTime
-	machineID := (id >> BitShiftMachineID) & ((1 << BitLenMachineID) - 1)
-	sequence := id & ((1 << BitLenSequence) - 1)
-	fmt.Printf("id: %d,\t time: %d,\t machineID: %d,\t sequence:%d\n", id, timeStamp, machineID, sequence)
-}
-
-func testSequentialRequest(g *Generator, numTest int) {
-	result := make(map[ID]bool)
-	var id ID
-	var err error
-	for i := 0; i < numTest; i++ {
-		id, err = g.generate()
-		if err != nil {
-			panic(err)
-		} else {
-			if _, ok := result[id]; ok {
-				panic(fmt.Sprintf("%d already existed", id))
-			} else {
-				result[id] = true
-			}
-		}
-	}
-	for k, _ := range result {
-		k.getInfo()
-	}
-}
-
-func main() {
-	generator := newGenerator(time.Now().Unix(), 1)
-	testSequentialRequest(generator, 10000)
 }
