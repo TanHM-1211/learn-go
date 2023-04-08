@@ -1,10 +1,10 @@
-package main
+package BloomFilter
 
 import (
-	"fmt"
 	"hash/fnv"
 	"math"
 	"math/rand"
+	"time"
 )
 
 type Hasher struct {
@@ -29,13 +29,13 @@ func (bf *BloomFilter) size() int {
 
 func (bf *BloomFilter) insert(s string) {
 	for _, hasher := range bf.hashers {
-		bf.data[int((*hasher).hash(s))%bf.size()] = true
+		bf.data[int(hasher.hash(s))%bf.size()] = true
 	}
 }
 
 func (bf *BloomFilter) contains(s string) bool {
 	for _, hasher := range bf.hashers {
-		if !bf.data[int((*hasher).hash(s))%bf.size()] {
+		if !bf.data[int(hasher.hash(s))%bf.size()] {
 			return false
 		}
 	}
@@ -44,8 +44,9 @@ func (bf *BloomFilter) contains(s string) bool {
 
 func NewFilter(maxItems int, fpRate float32) *BloomFilter {
 	// https://en.wikipedia.org/wiki/Bloom_filter#Probability_of_false_positives
-	SEED := 2
-	NUM_HASHES := int(-math.Ceil(math.Log2(float64(fpRate))))
+	// SEED := 2
+	SEED := time.Now().UnixNano()
+	NUM_HASHES := int(-math.Floor(math.Log2(float64(fpRate))))
 	r := rand.New(rand.NewSource(int64(SEED)))
 
 	hashers := []*Hasher{}
@@ -53,16 +54,7 @@ func NewFilter(maxItems int, fpRate float32) *BloomFilter {
 		hashers = append(hashers, &Hasher{r.Uint32()})
 	}
 
-	bloomSize := int(-math.Ceil(1.44 * math.Log2(float64(fpRate)) * float64(maxItems)))
+	bloomSize := int(-math.Floor(1.44 * math.Log2(float64(fpRate)) * float64(maxItems)))
 	bloomData := make([]bool, bloomSize)
 	return &BloomFilter{maxItems: maxItems, data: bloomData, hashers: hashers}
-}
-
-func main() {
-	bloomFilter := NewFilter(100, 0.005)
-	bloomFilter.insert("123456")
-	bloomFilter.insert("12345")
-	fmt.Println(bloomFilter.contains("1234"))
-	fmt.Println(bloomFilter.contains("12345"))
-	fmt.Println(bloomFilter.data)
 }
